@@ -46,14 +46,18 @@ android {
     }
 
     packagingOptions {
-        exclude 'META-INF/common.kotlin_module'
+        // exclude 'META-INF/common.kotlin_module'
+        // exclude 'META-INF/kotlinx-io.kotlin_module'
+        // exclude 'META-INF/atomicfu.kotlin_module'
+        merges -= ['/META-INF/**']
+        exclude 'META-INF/*'
     }
 
     tasks.lint.enabled = false
 }
 
 dependencies {
-    // implementation project(':common')
+    implementation project(':common')
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'com.android.support:multidex:1.0.3'
 
