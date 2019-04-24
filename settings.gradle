@@ -1,0 +1,13 @@
+rootProject.name = 'kotlin-native'
+
+enableFeaturePreview('GRADLE_METADATA')
+
+//include 'backend'
+include 'common_native'
+include 'common'
+
+if (INCLUDE_ANDROID == "true") {
+    include 'android', 'android:app'
+}
+include 'common'
+

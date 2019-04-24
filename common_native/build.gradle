@@ -1,0 +1,31 @@
+plugins {
+    id 'org.jetbrains.kotlin.konan' version '0.9.1'
+}
+
+// optinally specify the target (e.g. for iOS)
+// Supported here https://github.com/JetBrains/kotlin-native/blob/master/RELEASE_NOTES.md
+konan.targets = [ 
+        'macos_x64',
+        'linux_x64',
+        'android_arm64'
+]
+
+// konanArtifacts {
+//     program("app") {
+//         enableOptimizations(true)
+//     }
+// }
+
+
+konanArtifacts {
+    
+    library('utils') {
+        srcFiles fileTree('src/main/koltin')
+    }
+
+    program('hello') {
+        libraries {
+            artifact 'utils'
+        }
+    }
+}
