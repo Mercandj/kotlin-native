@@ -1,13 +1,14 @@
 plugins {
-    id 'org.jetbrains.kotlin.konan' version '0.9.1'
+    id 'org.jetbrains.kotlin.konan' version '1.3.30'
 }
 
 // optinally specify the target (e.g. for iOS)
 // Supported here https://github.com/JetBrains/kotlin-native/blob/master/RELEASE_NOTES.md
 konan.targets = [ 
         'macos_x64',
-        'linux_x64',
-        'android_arm64'
+        // 'linux_x64',
+        // 'android_arm64',
+        // 'ios_arm64'
 ]
 
 // konanArtifacts {
@@ -19,13 +20,14 @@ konan.targets = [
 
 konanArtifacts {
     
-    library('utils') {
-        srcFiles fileTree('src/main/koltin')
+    library('common_native') {
+        srcFiles fileTree('src/lib/koltin')
     }
 
-    program('hello') {
+    program('common_native_main') {
+        srcFiles fileTree('src/main/koltin')
         libraries {
-            artifact 'utils'
+            artifact 'common_native'
         }
     }
 }
