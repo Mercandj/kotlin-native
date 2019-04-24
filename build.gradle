@@ -1,6 +1,7 @@
 allprojects {
     buildscript {
         repositories {
+            maven { url "https://plugins.gradle.org/m2/" } // apply plugin: 'org.jetbrains.kotlin.konan'
             maven { url "http://kotlin.bintray.com/kotlin-eap" }
             maven { url "http://kotlin.bintray.com/kotlin-dev" }
             maven { url "https://kotlin.bintray.com/kotlinx" }
@@ -12,6 +13,7 @@ allprojects {
         dependencies {
             classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
             classpath "org.jetbrains.kotlin:kotlin-serialization:$kotlin_version"
+            classpath "org.jetbrains.kotlin:kotlin-native-gradle-plugin:$kotlin_version" // apply plugin: 'org.jetbrains.kotlin.konan'
         }
     }
     repositories {
