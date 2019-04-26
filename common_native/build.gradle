@@ -1,31 +1,139 @@
-apply plugin: 'org.jetbrains.kotlin.konan'
+apply plugin: 'kotlin'
+apply plugin: 'application'
+apply plugin: 'konan'
+
+def benchmarkIterations = 2000
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+}
+
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
+
+sourceSets {
+    main.kotlin.srcDirs += 'src/lib/kotlin'
+    main.kotlin.srcDirs += 'src/main/kotlin'
+}
 
 // optinally specify the target (e.g. for iOS)
 // Supported here https://github.com/JetBrains/kotlin-native/blob/master/RELEASE_NOTES.md
-konan.targets = [ 
+konan.targets = [
         'macos_x64',
         // 'linux_x64',
         // 'android_arm64',
         // 'ios_arm64'
 ]
 
-// konanArtifacts {
-//     program("app") {
-//         enableOptimizations(true)
-//     }
-// }
-
+compileKotlin {
+    kotlinOptions.suppressWarnings = true
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+}
 
 konanArtifacts {
-    
+
     library('common_native') {
-        srcFiles fileTree('src/lib/koltin')
+        srcFiles fileTree('src/lib/kotlin')
     }
 
     program('common_native_main') {
-        srcFiles fileTree('src/main/koltin')
+        enableOptimizations(true)
+        srcFiles fileTree('src/main/kotlin')
         libraries {
             artifact 'common_native'
         }
     }
 }
+
+//noinspection GroovyAssignabilityCheck
+task runMacOs(type: Exec) {
+    group "run"
+    commandLine './run_mac_os_x64.sh'
+}
+
+//noinspection GroovyAssignabilityCheck
+task jvmRun(type: JavaExec) {
+    def output = new ByteArrayOutputStream()
+    classpath sourceSets.main.runtimeClasspath
+    main = "MainKt"
+    args "$benchmarkIterations"
+    standardOutput = output
+    doLast {
+        dumpReport('jvmReport', output)
+    }
+}
+
+private void dumpReport(
+        String name,
+        ByteArrayOutputStream output
+) {
+    new File("${buildDir.absolutePath}/${name}.txt").withOutputStream {
+        it.write(output.toByteArray())
+    }
+}
+
+//noinspection GroovyAssignabilityCheck
+task konanRun(type: Exec) {
+    dependsOn build
+    def output = new ByteArrayOutputStream()
+    commandLine project.file("build/konan/bin/macos_x64/common_native_main.kexe").absolutePath, "$benchmarkIterations"
+    standardOutput = output
+    doLast {
+        dumpReport('konanReport', output)
+    }
+}
+
+startScripts {
+    setEnabled(false)
+}
+
+//noinspection GroovyAssignabilityCheck
+task bench(type: DefaultTask) {
+    group "verification"
+    dependsOn jvmRun
+    dependsOn konanRun
+    dependsOn clean
+
+    doLast {
+        def jvmReport = new Report(project.file("build/jvmReport.txt"))
+        def konanReport = new Report(project.file("build/konanReport.txt"))
+        jvmReport.report.each { k, v ->
+            def ratio = String.format('%.2f', konanReport.report[k] / v * 100)
+            println("$k : $ratio %")
+            if (System.getenv("TEAMCITY_BUILD_PROPERTIES_FILE") != null)
+                println("##teamcity[buildStatisticValue key='$k' value='$ratio']")
+        }
+    }
+}
+
+
+class Report {
+    def Map<String, Double> report = new HashMap()
+
+    Report(File path) {
+        path.readLines().drop(3).takeWhile { it.split(':').length == 2 }.each {
+            def p = it.split(':')
+            report.put(p[0].trim(), Double.parseDouble(p[1].trim()))
+        }
+    }
+}
+
+
